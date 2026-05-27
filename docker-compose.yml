@@ -1,0 +1,7 @@
+services:
+  pdf-bot:
+    build: .
+    container_name: pdf-bot
+    restart: always
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
