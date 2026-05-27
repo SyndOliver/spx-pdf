@@ -116,6 +116,57 @@ def update_pdf(input_pdf, output_pdf, font_bold):
             # Lấy toàn bộ words của page một lần để tìm đúng vị trí
             all_words = page.get_text("words")
 
+            # Lấy toàn bộ text của page để kiểm tra tổng số lượng sản phẩm
+            page_text = page.get_text("text")
+            qty_match = re.search(r"Tổng SL sản phẩm:\s*(\d+)", page_text)
+            if qty_match:
+                total_qty = int(qty_match.group(1))
+                if total_qty < 4:
+                    lines = ["Quay video", "khi mở hàng"]
+                    bold_font = fitz.Font(fontfile=font_bold)
+                    target_fontsize = 40
+                    
+                    # Căn giữa trong cột bên trái (x từ 11.3 đến 210.0)
+                    col_left = 11.3
+                    col_right = 210.0
+                    col_width = col_right - col_left
+                    
+                    line_widths = [bold_font.text_length(line, fontsize=target_fontsize) for line in lines]
+                    line_xs = [col_left + (col_width - w) / 2.0 for w in line_widths]
+                    
+                    # Tọa độ y cho 2 dòng
+                    write_y1 = 253.0
+                    write_y2 = 277.0
+                    
+                    # Tính toán khung hộp xung quanh cả 2 dòng
+                    min_x = min(line_xs) - 6
+                    max_x = max(x + w for x, w in zip(line_xs, line_widths)) + 6
+                    
+                    box_rect = fitz.Rect(
+                        min_x,
+                        write_y1 - target_fontsize - 2,
+                        max_x,
+                        write_y2 + 4
+                    )
+                    page.draw_rect(box_rect, color=black, width=1.2)
+                    
+                    # Ghi 2 dòng chữ
+                    tw_warn = fitz.TextWriter(page.rect)
+                    tw_warn.append(
+                        (line_xs[0], write_y1),
+                        lines[0],
+                        font=bold_font,
+                        fontsize=target_fontsize,
+                    )
+                    tw_warn.append(
+                        (line_xs[1], write_y2),
+                        lines[1],
+                        font=bold_font,
+                        fontsize=target_fontsize,
+                    )
+                    tw_warn.write_text(page, color=black)
+
+
             for rect in instances:
 
                 line_h = rect.height
