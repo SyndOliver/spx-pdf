@@ -124,7 +124,7 @@ def update_pdf(input_pdf, output_pdf, font_bold):
                 if total_qty < 4:
                     lines = ["Quay video", "khi mở hàng"]
                     bold_font = fitz.Font(fontfile=font_bold)
-                    target_fontsize = 40
+                    target_fontsize = 30
                     
                     # Căn giữa trong cột bên trái (x từ 11.3 đến 210.0)
                     col_left = 11.3
