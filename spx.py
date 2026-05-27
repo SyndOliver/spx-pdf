@@ -243,16 +243,15 @@ def update_pdf(input_pdf, output_pdf, font_bold):
 
 
 
-                # Gạch chân theo đúng chiều rộng text mới
-                page.draw_line(
-
-                    fitz.Point(combo_rect.x0, combo_rect.y1 + 1),
-
-                    fitz.Point(combo_rect.x0 + text_w, combo_rect.y1 + 1),
-
-                    color=black, width=1.0,
-
+                # Vẽ khung hình chữ nhật xung quanh chữ Combo thay vì gạch chân
+                border_rect = fitz.Rect(
+                    combo_rect.x0 - 2,
+                    combo_rect.y0 - 1,
+                    min(combo_rect.x0 + text_w + 2, max_right_x),
+                    combo_rect.y1 + 1
                 )
+                page.draw_rect(border_rect, color=black, width=1.0)
+
 
 
 
