@@ -243,6 +243,82 @@ def update_pdf(input_pdf, output_pdf, font_bold):
                     )
                     tw.write_text(page, color=black)
 
+            # 2b) Xử lý trường hợp "SL:" bị tách thành "S" + "L:" do xuống dòng
+            for idx, w in enumerate(all_words):
+                if w[4].strip() != "S":
+                    continue
+                if idx + 1 >= len(all_words):
+                    continue
+                nw = all_words[idx + 1]
+                nw_text = nw[4].strip()
+
+                # Trường hợp 1: word tiếp theo là "L:" và số nằm ở word sau nữa
+                # Trường hợp 2: word tiếp theo là "L:N" (dính liền số)
+                quantity = None
+                qty_word = None  # word chứa số lượng
+
+                if nw_text == "L:" and idx + 2 < len(all_words):
+                    qty_w = all_words[idx + 2]
+                    if qty_w[4].strip().isdigit():
+                        quantity = int(qty_w[4].strip())
+                        qty_word = qty_w
+                elif nw_text.startswith("L:"):
+                    num_part = nw_text[2:].strip()
+                    if num_part.isdigit():
+                        quantity = int(num_part)
+                        qty_word = nw  # số nằm chung word "L:2"
+
+                if quantity is None or quantity < 2:
+                    continue
+
+                # Kiểm tra đây có phải là SL sản phẩm hay không
+                # (bỏ qua "Tổng SL sản phẩm" ở dòng header)
+                s_word = w
+                # Nếu "S" nằm trong dòng "Tổng SL sản phẩm:" thì bỏ qua
+                skip = False
+                if idx >= 1:
+                    prev_text = all_words[idx - 1][4].strip()
+                    if prev_text in ("Tổng", "tổng"):
+                        skip = True
+                if skip:
+                    continue
+
+                full_text = f"SL: {quantity}"
+                bold_font_sl = fitz.Font(fontfile=font_bold)
+                target_fontsize = 11
+                text_w_val = bold_font_sl.text_length(full_text, fontsize=target_fontsize)
+
+                # Xóa word "S"
+                s_erase = fitz.Rect(s_word[0], s_word[1],
+                                    min(s_word[2] + 2, max_right_x), s_word[3])
+                page.draw_rect(s_erase, color=white, fill=white)
+
+                # Xóa word "L:" (hoặc "L:N")
+                l_erase = fitz.Rect(nw[0], nw[1], nw[2] + 2, nw[3])
+                page.draw_rect(l_erase, color=white, fill=white)
+
+                # Xóa word số lượng nếu nó là word riêng biệt
+                if qty_word is not None and qty_word is not nw:
+                    q_erase = fitz.Rect(qty_word[0], qty_word[1],
+                                        qty_word[2] + 2, qty_word[3])
+                    page.draw_rect(q_erase, color=white, fill=white)
+
+                # Ghi "SL: N" bold ở dòng "L:" (dòng dưới, có nhiều chỗ hơn)
+                write_x = nw[0]
+                write_y = nw[3]
+                avail_w = max_right_x - write_x
+                if text_w_val > avail_w and avail_w > 0:
+                    target_fontsize *= avail_w / text_w_val
+
+                tw = fitz.TextWriter(page.rect)
+                tw.append(
+                    (write_x, write_y),
+                    full_text,
+                    font=bold_font_sl,
+                    fontsize=target_fontsize,
+                )
+                tw.write_text(page, color=black)
+
 
 
             # 3) Tìm "Combo" → in đậm + gạch chân (không đè chữ khác)
