@@ -192,7 +192,7 @@ def update_pdf(input_pdf, output_pdf, font_bold):
 
                 full_text = f"SL: {quantity}"
                 bold_font_sl = fitz.Font(fontfile=font_bold)
-                target_fontsize = 11
+                target_fontsize = 13
                 text_w = bold_font_sl.text_length(full_text, fontsize=target_fontsize)
 
                 # Kiểm tra số nằm ở dòng khác hay cùng dòng
@@ -285,7 +285,8 @@ def update_pdf(input_pdf, output_pdf, font_bold):
 
                 full_text = f"SL: {quantity}"
                 bold_font_sl = fitz.Font(fontfile=font_bold)
-                target_fontsize = 11
+                # update font size here
+                target_fontsize = 12.5
                 text_w_val = bold_font_sl.text_length(full_text, fontsize=target_fontsize)
 
                 # Xóa word "S"
