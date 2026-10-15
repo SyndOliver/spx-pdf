@@ -322,7 +322,7 @@ def update_pdf(input_pdf, output_pdf, font_bold):
 
 
 
-            # 3) Tìm "Combo" → in đậm + gạch chân (không đè chữ khác)
+            # 3) Tìm "Combo" → in đậm (không đè chữ khác)
 
             combo_instances = page.search_for("Combo")
 
@@ -368,18 +368,6 @@ def update_pdf(input_pdf, output_pdf, font_bold):
                 )
 
                 tw2.write_text(page, color=black)
-
-
-
-                # Vẽ khung hình chữ nhật xung quanh chữ Combo thay vì gạch chân
-                border_rect = fitz.Rect(
-                    combo_rect.x0 - 2,
-                    combo_rect.y0 - 1,
-                    min(combo_rect.x0 + text_w + 2, max_right_x),
-                    combo_rect.y1 + 1
-                )
-                page.draw_rect(border_rect, color=black, width=1.0)
-
 
 
 
