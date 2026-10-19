@@ -322,7 +322,7 @@ def update_pdf(input_pdf, output_pdf, font_bold):
 
 
 
-            # 3) Tìm "Combo" → in đậm (không đè chữ khác)
+            # 3) Tìm "Combo" → in đậm (giữ nguyên kích thước, không phóng to)
 
             combo_instances = page.search_for("Combo")
 
@@ -330,26 +330,32 @@ def update_pdf(input_pdf, output_pdf, font_bold):
 
                 combo_rect = fitz.Rect(rect)
 
-                # Tính font size lớn hơn, nhưng giới hạn chiều rộng để không tràn
+                # Lấy font size và baseline gốc để giữ nguyên kích thước
+                text_dict = page.get_text("dict", clip=combo_rect)
+                orig_size = None
+                baseline = (combo_rect.x0, combo_rect.y1 - 1)
+                try:
+                    span = text_dict["blocks"][0]["lines"][0]["spans"][0]
+                    orig_size = span["size"]
+                    baseline = span.get("origin", baseline)
+                except (IndexError, KeyError):
+                    orig_size = combo_rect.height * 0.8
+
+                text_to_write = page.get_text("text", clip=combo_rect).strip() or "Combo"
                 bold_font = fitz.Font(fontfile=font_bold)
-                target_size = combo_rect.height * 1.05
-                text_w = bold_font.text_length("Combo", fontsize=target_size)
+                font_size = orig_size
+                text_w = bold_font.text_length(text_to_write, fontsize=font_size)
 
-                # Không cho phép text rộng hơn 1.3x ô gốc (tránh đè chữ/QR bên cạnh)
-                max_w = combo_rect.width * 1.3
-                # Thêm: giới hạn bên phải không vượt QR
+                # Giới hạn bên phải không vượt QR
                 available_w = max_right_x - combo_rect.x0
-                max_w = min(max_w, available_w)
-                if text_w > max_w:
-                    target_size *= max_w / text_w
-                    text_w = max_w
+                if text_w > available_w and available_w > 0:
+                    font_size *= available_w / text_w
+                    text_w = available_w
 
-                fit_size = target_size
-
-                # Xóa vùng vừa đủ cho text mới
+                # Xóa vùng vừa đủ cho text cũ/mới
                 erase_rect = fitz.Rect(
                     combo_rect.x0, combo_rect.y0,
-                    combo_rect.x0 + text_w + 1, combo_rect.y1
+                    min(combo_rect.x0 + max(combo_rect.width, text_w) + 1, max_right_x), combo_rect.y1
                 )
                 page.draw_rect(erase_rect, color=white, fill=white)
 
@@ -357,13 +363,13 @@ def update_pdf(input_pdf, output_pdf, font_bold):
 
                 tw2.append(
 
-                    (combo_rect.x0, combo_rect.y1 - 1),
+                    baseline,
 
-                    "Combo",
+                    text_to_write,
 
                     font=bold_font,
 
-                    fontsize=fit_size,
+                    fontsize=font_size,
 
                 )
 
